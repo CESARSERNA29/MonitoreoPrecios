@@ -30,7 +30,7 @@ try:
     #response = requests.get(github_url)
     #df = pd.read_excel(BytesIO(response.content))
     #df = pd.read_excel(r"C:\Users\cesar\Downloads\DASH MONITOREO PRECIOS\precios_productos_demo2.xlsx")
-    df = pd.read_excel('data/precios_productos_demo.xlsx', sheet_name='Hoja1', engine='openpyxl')
+    df = pd.read_excel('data/precios_productos_demo.xlsx', sheet_name='Sheet1', engine='openpyxl')
 
     df["periodo"] = pd.to_datetime(df["periodo"])
     df = df.sort_values("periodo")
