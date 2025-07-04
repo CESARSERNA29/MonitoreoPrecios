@@ -1,10 +1,13 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 from io import BytesIO
+from datetime import datetime
 
+# -------------------------------
+# CONFIGURACION INICIAL
+# -------------------------------
 st.set_page_config(page_title="Tablero de Precios", layout="wide")
 st.markdown("""
     <style>
@@ -18,14 +21,23 @@ st.title("📊 Monitoreo de Precios por Producto")
 st.markdown("Visualiza la evolución de precios mensuales, define límites de control y exporta resultados.")
 st.markdown("---")
 
-github_url = "https://raw.githubusercontent.com/mi-usuario/mi-repo/main/data/precios_productos_demo.xlsx"
+# -------------------------------
+# CARGA DE DATOS DESDE GITHUB
+# -------------------------------
+# github_url = "https://raw.githubusercontent.com/tu_usuario/tu_repo/main/precios_productos_demo.xlsx"
 
 try:
-    response = requests.get(github_url)
-    df = pd.read_excel(BytesIO(response.content))
+    #response = requests.get(github_url)
+    #df = pd.read_excel(BytesIO(response.content))
+    #df = pd.read_excel(r"C:\Users\cesar\Downloads\DASH MONITOREO PRECIOS\precios_productos_demo2.xlsx")
+    df = pd.read_excel('data/precios_productos_demo.xlsx', sheet_name='Hoja1', engine='openpyxl')
+
     df["periodo"] = pd.to_datetime(df["periodo"])
     df = df.sort_values("periodo")
 
+    # -------------------------------
+    # FILTROS PERSONALIZADOS
+    # -------------------------------
     st.sidebar.header("🎛️ Filtros")
     area_opciones = sorted(df["AreaMetropolitana"].dropna().unique())
     canal_opciones = sorted(df["Canal"].dropna().unique())
@@ -35,6 +47,7 @@ try:
     canal_sel = st.sidebar.multiselect("Canal de Comercialización:", canal_opciones, default=canal_opciones)
     producto_id_sel = st.sidebar.multiselect("ID de Producto:", producto_ids, default=producto_ids)
 
+    # Aplicar filtros al dataframe
     df_filtrado = df[
         (df["AreaMetropolitana"].isin(area_sel)) &
         (df["Canal"].isin(canal_sel)) &
@@ -49,6 +62,7 @@ try:
 
     for prod in seleccionados:
         df_prod = df_filtrado[df_filtrado["producto_nombre"] == prod]
+
         col1, col2 = st.columns(2)
         with col1:
             lim_inf = st.number_input(f"🔻 Límite inferior - {prod}", min_value=0, value=int(df_prod["precio"].min() * 0.9))
@@ -56,24 +70,65 @@ try:
             lim_sup = st.number_input(f"🔺 Límite superior - {prod}", min_value=0, value=int(df_prod["precio"].max() * 1.1))
 
         limites_dict[prod] = {"inferior": lim_inf, "superior": lim_sup}
+
         fuera_rango = df_prod[(df_prod["precio"] < lim_inf) | (df_prod["precio"] > lim_sup)]
 
-        fig.add_trace(go.Scatter(x=df_prod["periodo"], y=df_prod["precio"], mode="lines+markers", name=f"{prod} - Precio"))
-        fig.add_trace(go.Scatter(x=df_prod["periodo"], y=[lim_sup]*len(df_prod), mode="lines", name=f"{prod} - Límite Superior", line=dict(color="red", dash="dash")))
-        fig.add_trace(go.Scatter(x=df_prod["periodo"], y=[lim_inf]*len(df_prod), mode="lines", name=f"{prod} - Límite Inferior", line=dict(color="green", dash="dash")))
-        fig.add_trace(go.Scatter(x=fuera_rango["periodo"], y=fuera_rango["precio"], mode="markers", name=f"{prod} - ⚠ Fuera de Rango", marker=dict(color="orange", size=10, symbol="x")))
+        fig.add_trace(go.Scatter(
+            x=df_prod["periodo"],
+            y=df_prod["precio"],
+            mode="lines+markers",
+            name=f"{prod} - Precio",
+            line=dict(width=2)
+        ))
 
-    fig.update_layout(title="📈 Evolución de Precios con Límites de Control", xaxis_title="Periodo", yaxis_title="Precio", hovermode="x unified", height=600)
+        fig.add_trace(go.Scatter(
+            x=df_prod["periodo"],
+            y=[lim_sup] * len(df_prod),
+            mode="lines",
+            name=f"{prod} - Límite Superior",
+            line=dict(color="red", dash="dash")
+        ))
+        fig.add_trace(go.Scatter(
+            x=df_prod["periodo"],
+            y=[lim_inf] * len(df_prod),
+            mode="lines",
+            name=f"{prod} - Límite Inferior",
+            line=dict(color="green", dash="dash")
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=fuera_rango["periodo"],
+            y=fuera_rango["precio"],
+            mode="markers",
+            name=f"{prod} - ⚠ Fuera de Rango",
+            marker=dict(color="orange", size=10, symbol="x")
+        ))
+
+    fig.update_layout(
+        title="📈 Evolución de Precios con Límites de Control",
+        xaxis_title="Periodo",
+        yaxis_title="Precio",
+        hovermode="x unified",
+        height=600
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
+    # -------------------------------
+    # GUARDAR LIMITES EN CSV
+    # -------------------------------
     st.markdown("### 💾 Guardar límites definidos")
     nombre_archivo = st.text_input("Nombre del archivo a guardar:", value="limites_guardados")
+
     if st.button("Guardar límites como CSV"):
         limites_df = pd.DataFrame.from_dict(limites_dict, orient="index").reset_index()
         limites_df.columns = ["producto_nombre", "limite_inferior", "limite_superior"]
         limites_df.to_csv(f"{nombre_archivo}.csv", index=False)
         st.success(f"✅ Límites guardados exitosamente como '{nombre_archivo}.csv'.")
 
+    # -------------------------------
+    # MOSTRAR TABLA
+    # -------------------------------
     st.markdown("---")
     st.subheader("🧾 Tabla de Datos Filtrados")
     st.dataframe(df_filtrado[df_filtrado["producto_nombre"].isin(seleccionados)].sort_values(["producto_nombre", "periodo"]))
