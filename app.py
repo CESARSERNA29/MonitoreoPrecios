@@ -1,3 +1,15 @@
+
+# Este script permite visualizar la evolución de precios mensuales por producto, 
+# definir límites de control y exportar resultados.
+# ------------------------------------------------------------------------------
+# Autor: César Serna
+# Febrero 2026
+# ------------------------------------------------------------------------------
+
+
+
+
+
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
