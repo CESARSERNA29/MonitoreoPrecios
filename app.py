@@ -1,14 +1,18 @@
-
+# ******************************************************************************
+# ==============================================================================
 # Este script permite visualizar la evolución de precios mensuales por producto, 
 # definir límites de control y exportar resultados.
 # ------------------------------------------------------------------------------
 # Autor: César Serna
 # Febrero 2026
+# Dashboard inicial: Línea para Probar el Push desde Pycharm ---> GitHab
 # ------------------------------------------------------------------------------
 
 
 
 
+import json
+import boto3
 
 import streamlit as st
 import pandas as pd
@@ -16,6 +20,7 @@ import plotly.graph_objects as go
 import requests
 from io import BytesIO
 from datetime import datetime
+
 
 # -------------------------------
 # CONFIGURACION INICIAL
