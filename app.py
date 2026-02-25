@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Autor: César Serna
 # Febrero 2026
-# Dashboard inicial: Línea para Probar el Push desde Pycharm ---> GitHab
+# Dashboard inicial: Línea para Probar el Push desde Pycharm ---> GitHub
 # ------------------------------------------------------------------------------
 
 
